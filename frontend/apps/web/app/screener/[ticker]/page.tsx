@@ -8,11 +8,11 @@ import ScoreGauge from '@/components/ScoreGauge'
 import CriteriaBreakdown from '@/components/CriteriaBreakdown'
 
 interface PageProps {
-  params: { ticker: string }
+  params: Promise<{ ticker: string }>
 }
 
 export default function StockDetailPage({ params }: PageProps) {
-  const { ticker } = params
+  const { ticker } = React.use(params)
   const [isWatchlisted, setIsWatchlisted] = useState(false)
 
   const { data, isLoading, error } = useQuery({

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import FilterPanel from '@/components/FilterPanel'
@@ -8,20 +8,19 @@ import StockCard from '@/components/StockCard'
 import { screenerApi } from '@/lib/api'
 import { ScreenerFilters } from '@/lib/types'
 
-export default function ScreenerPage() {
+function ScreenerContent() {
   const searchParams = useSearchParams()
   const [filters, setFilters] = useState<ScreenerFilters>({})
   const [page, setPage] = useState(1)
 
   useEffect(() => {
-    // URL 파라미터에서 필터 추출
     const market = searchParams.get('market')
     const sector = searchParams.get('sector')
     const minScore = searchParams.get('min_score')
     const pageParam = searchParams.get('page')
 
     setFilters({
-      market: (market as any) || undefined,
+      market: (market as ScreenerFilters['market']) || undefined,
       sector: sector || undefined,
       min_score: minScore ? Number(minScore) : undefined,
       page: pageParam ? Number(pageParam) : 1,
@@ -34,15 +33,13 @@ export default function ScreenerPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['screener', filters],
     queryFn: () => screenerApi.getResults(filters),
-    enabled: Object.keys(filters).length > 0,
+    enabled: true,
   })
 
   const results = data?.data
 
   return (
-    <div>
-      <h1 className="text-4xl font-bold mb-8">주식 스크리너</h1>
-
+    <>
       <FilterPanel />
 
       {isLoading && (
@@ -52,12 +49,12 @@ export default function ScreenerPage() {
       )}
 
       {error && (
-        <div className="bg-danger text-white rounded-lg p-4 mb-6">
+        <div className="bg-red-500 text-white rounded-lg p-4 mb-6">
           데이터를 불러오는 중 오류가 발생했습니다.
         </div>
       )}
 
-      {results && results.results.length > 0 && (
+      {results && results.results && results.results.length > 0 && (
         <>
           <div className="mb-4">
             <p className="text-gray-600">
@@ -71,7 +68,6 @@ export default function ScreenerPage() {
             ))}
           </div>
 
-          {/* 페이지네이션 */}
           {results.total_pages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-8">
               <button
@@ -87,9 +83,7 @@ export default function ScreenerPage() {
                   key={p}
                   onClick={() => setPage(p)}
                   className={`px-4 py-2 rounded ${
-                    page === p
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-200 hover:bg-gray-300'
+                    page === p ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
                   }`}
                 >
                   {p}
@@ -108,11 +102,22 @@ export default function ScreenerPage() {
         </>
       )}
 
-      {results && results.results.length === 0 && (
+      {results && (!results.results || results.results.length === 0) && (
         <div className="text-center py-12">
           <p className="text-gray-600">조건에 맞는 종목이 없습니다.</p>
         </div>
       )}
+    </>
+  )
+}
+
+export default function ScreenerPage() {
+  return (
+    <div>
+      <h1 className="text-4xl font-bold mb-8">주식 스크리너</h1>
+      <Suspense fallback={<div className="text-center py-12 text-gray-600">로딩 중...</div>}>
+        <ScreenerContent />
+      </Suspense>
     </div>
   )
 }
