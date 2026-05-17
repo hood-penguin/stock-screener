@@ -1,53 +1,285 @@
-# Stock Screener Project - Development Guide
+# Stock Screener — 개발 가이드
 
 ## 프로젝트 개요
 
-**저평가 주식 탐색 서비스**: 미국·한국 주식 시장에서 저평가 종목을 자동 발굴하는 풀스택 서비스
+Stock Screener는 미국과 한국 주식 시장의 저평가 종목을 자동으로 탐색하는 풀스택 서비스입니다. 머신러닝 없이 재무 지표 기반 스크리닝 알고리즘으로 투자 기회를 찾아냅니다.
 
-**기술 스택**:
-- Backend: FastAPI + SQLAlchemy + Celery
-- Frontend: Next.js 15 + TanStack Query + Zustand
-- Database: PostgreSQL 16 + Redis 7
-- Infrastructure: Docker Compose (개발), AWS ECS Fargate (운영)
+## 기술 스택
+
+- **백엔드**: FastAPI + Celery + PostgreSQL + Redis
+- **프론트엔드**: Next.js 15 (TypeScript, Tailwind CSS, React Query)
+- **인프라**: Docker Compose
+- **데이터**: yfinance (Yahoo Finance), Mock 데이터
 
 ## 빠른 시작
 
-### 로컬 개발 환경 시작
+### 1. 저장소 클론 및 환경 설정
 
 ```bash
-# 1. 환경 설정
+cd /root/project/stock-screener
+
+# 환경변수 생성
 cp .env.example .env
 
-# 2. Docker Compose로 모든 서비스 실행
-docker-compose up --build
-
-# 3. 데이터베이스 초기화 (별도 터미널)
-docker-compose exec backend alembic upgrade head
-docker-compose exec backend python -m app.scripts.seed_data
-
-# 4. 접속
-# API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
-# Frontend: http://localhost:3000
+# .env 파일에서 SECRET_KEY 변경
+# SECRET_KEY=your-random-32-character-string-here
 ```
 
-### 서비스별 실행 방법
+### 2. Docker Compose로 서비스 시작
 
 ```bash
-# 특정 서비스만 시작
-docker-compose up backend
+docker compose up -d
 
-# 재빌드하며 시작
-docker-compose up --build backend worker
-
-# 서비스 중단
-docker-compose down
-
-# 데이터 포함 완전 정리
-docker-compose down -v
+# 데이터베이스 마이그레이션
+docker compose exec backend alembic upgrade head
 ```
 
-## 아키텍처 핵심
+### 3. 초기 데이터 수집 (선택사항)
+
+```bash
+# US 시장 데이터 수집
+docker compose exec backend celery -A app.tasks.celery_app call app.tasks.data_fetch.fetch_us_market
+
+# KR 시장 데이터 수집 (Mock 데이터)
+docker compose exec backend celery -A app.tasks.celery_app call app.tasks.data_fetch.fetch_kr_market
+```
+
+## 개발 환경 접근
+
+- **백엔드 API**: http://localhost:8000
+- **API 문서 (Swagger)**: http://localhost:8000/docs
+- **프론트엔드**: http://localhost:3000
+
+## 프로젝트 구조
+
+```
+stock-screener/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/                 # API 엔드포인트
+│   │   │   ├── auth.py             # 인증 (회원가입, 로그인)
+│   │   │   ├── stocks.py           # 주식 API
+│   │   │   └── screening.py        # 스크리닝 결과 API
+│   │   ├── core/
+│   │   │   ├── security.py         # JWT, bcrypt
+│   │   │   └── screening/          # 스크리닝 엔진
+│   │   │       ├── criteria/       # 12개 평가 기준 (플러그인식)
+│   │   │       ├── engine.py       # 스크리닝 엔진
+│   │   │       └── registry.py     # 기준 자동 탐색
+│   │   ├── data/
+│   │   │   └── providers/          # 데이터 소스 어댑터
+│   │   │       ├── base.py         # 기본 클래스
+│   │   │       └── yahoo_finance.py # Yahoo Finance 프로바이더
+│   │   ├── models/                 # SQLAlchemy 모델
+│   │   ├── schemas/                # Pydantic 스키마
+│   │   ├── tasks/                  # Celery 태스크
+│   │   │   ├── celery_app.py
+│   │   │   ├── data_fetch.py       # 데이터 수집
+│   │   │   ├── screening_run.py    # 스크리닝 실행
+│   │   │   └── schedules.py        # Celery Beat 스케줄
+│   │   ├── config.py               # 설정 (환경변수)
+│   │   ├── database.py             # DB 및 Redis 연결
+│   │   └── main.py                 # FastAPI 엔트리포인트
+│   └── tests/                      # 테스트
+│
+├── frontend/
+│   └── apps/web/
+│       ├── app/
+│       │   ├── layout.tsx          # 루트 레이아웃
+│       │   ├── page.tsx            # 홈 (스크리너로 리다이렉트)
+│       │   ├── screener/
+│       │   │   ├── page.tsx        # 스크리너 메인 페이지
+│       │   │   └── [ticker]/page.tsx # 종목 상세 페이지
+│       │   └── globals.css         # 전역 CSS
+│       ├── components/             # React 컴포넌트
+│       │   ├── FilterPanel.tsx     # 필터 패널
+│       │   ├── StockCard.tsx       # 종목 카드
+│       │   ├── ScoreGauge.tsx      # 점수 게이지
+│       │   └── CriteriaBreakdown.tsx # 기준별 분석
+│       ├── lib/
+│       │   ├── api.ts              # API 클라이언트
+│       │   └── types.ts            # TypeScript 타입
+│       └── package.json            # 의존성
+│
+├── docker-compose.yml              # 서비스 오케스트레이션
+├── .env.example                    # 환경변수 템플릿
+└── CLAUDE.md                       # 이 파일
+```
+
+## 스크리닝 기준 (12개)
+
+### 저평가 지표 (4개)
+- PER Ratio (주가수익비율)
+- PB Ratio (주가순자산비율)
+- PS Ratio (주가판매비)
+- PEG Ratio (주가순이익성장비율)
+
+### 수익성 지표 (5개)
+- ROE (자기자본이익률)
+- ROA (총자산이익률)
+- Net Margin (순이익률)
+- Gross Margin (매출총이익률)
+- Operating Margin (영업이익률)
+
+### 성장성 지표 (2개)
+- Revenue Growth (매출 성장)
+- EPS Growth (주당이익 성장)
+
+### 재무 건강도 (4개)
+- Debt-to-Equity (부채비율)
+- Current Ratio (유동비율)
+- Quick Ratio (당좌비율)
+- Interest Coverage (이자보상배수)
+
+## Celery 스케줄
+
+```
+KR 시장 데이터 수집:   매일 06:40 UTC
+US 시장 데이터 수집:   매일 21:30 UTC
+KR 시장 스크리닝:     매일 07:00 UTC
+US 시장 스크리닝:     매일 22:00 UTC
+```
+
+변경: `/backend/app/tasks/schedules.py` 에서 `CELERY_BEAT_SCHEDULE` 수정
+
+## 주요 명령어
+
+### 데이터베이스 마이그레이션
+
+```bash
+cd backend
+
+# 마이그레이션 생성
+alembic revision --autogenerate -m "설명"
+
+# 마이그레이션 적용
+alembic upgrade head
+
+# 이전 버전으로 롤백
+alembic downgrade -1
+```
+
+### 테스트 실행
+
+```bash
+cd backend
+
+# 모든 테스트
+pytest
+
+# 특정 테스트 실행
+pytest tests/test_screening/test_criteria.py
+
+# 커버리지 포함
+pytest --cov=app
+```
+
+### 백엔드 로컬 개발 (Docker 없이)
+
+```bash
+cd backend
+
+# 가상환경 활성화
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 의존성 설치
+pip install -e ".[dev]"
+
+# PostgreSQL 및 Redis 필요
+export DATABASE_URL=postgresql://user:pass@localhost/dbname
+export REDIS_URL=redis://localhost:6379/0
+
+# 서버 시작
+uvicorn app.main:app --reload
+
+# Celery Worker (별도 터미널)
+celery -A app.tasks.celery_app worker --loglevel=info
+
+# Celery Beat (별도 터미널)
+celery -A app.tasks.celery_app beat --loglevel=info
+```
+
+### 프론트엔드 로컬 개발
+
+```bash
+cd frontend/apps/web
+
+# 의존성 설치
+pnpm install
+
+# 개발 서버
+pnpm dev
+
+# 빌드
+pnpm build
+
+# 프로덕션 서버
+pnpm start
+```
+
+## 새로운 스크리닝 기준 추가
+
+1. `/backend/app/core/screening/criteria/` 하위에 새 파일 생성:
+
+```python
+# example: revenue_growth.py
+from app.core.screening.criteria.base import BaseCriteria
+
+class RevenueGrowthCriteria(BaseCriteria):
+    name = "Revenue Growth"
+    category = "growth"
+    
+    def evaluate(self, metrics, sector_avg):
+        if not metrics.get("revenue_growth"):
+            return None
+        
+        growth = metrics["revenue_growth"]
+        sector_growth = sector_avg.get("revenue_growth", 5.0)
+        
+        score = min(100, (growth / sector_growth) * 50 + 50)
+        reason = f"수익 성장률: {growth:.1f}% (섹터 평균: {sector_growth:.1f}%)"
+        
+        return {"score": score, "reason": reason}
+```
+
+2. 엔진이 자동으로 탐색하고 등록합니다 (플러그인 아키텍처)
+
+## 트러블슈팅
+
+### 데이터베이스 연결 오류
+```bash
+docker compose logs db
+lsof -i :5432
+```
+
+### Redis 연결 오류
+```bash
+redis-cli ping
+docker compose logs redis
+```
+
+### Celery 태스크 미실행
+```bash
+docker compose logs worker
+docker compose logs beat
+docker compose exec backend celery -A app.tasks.celery_app call app.tasks.data_fetch.fetch_us_market
+```
+
+## API 키 설정
+
+### Yahoo Finance (yfinance)
+- 무료, 특별한 키 불필요
+
+### Polygon.io (선택)
+```bash
+POLYGON_API_KEY=pk_...
+```
+
+### 한국 DART API (선택)
+```bash
+DART_API_KEY=...
+```
 
 ### 1. 스크리닝 엔진 (플러그인 아키텍처)
 

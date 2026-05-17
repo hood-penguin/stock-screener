@@ -1,33 +1,248 @@
-# 저평가 주식 탐색 서비스 (Stock Screener)
+# Stock Screener
 
-> 미국·한국 주식 시장에서 저평가 종목을 자동 발굴하는 풀스택 서비스
+저평가 주식을 자동으로 탐색하는 풀스택 웹 애플리케이션입니다. 미국 및 한국 주식 시장의 재무 지표를 분석하여 투자 기회를 발굴합니다.
+
+## 주요 특징
+
+- **12가지 재무 지표**: 저평가, 수익성, 성장성, 재무 건강도 기반 평가
+- **자동 데이터 수집**: Celery를 통한 정기적인 시장 데이터 업데이트
+- **실시간 스크리닝**: 조건에 맞는 저평가 종목 즉시 조회
+- **필터링**: 시장, 섹터, 점수 범위로 결과 필터링
+- **상세 분석**: 종목별 종합 점수 및 기준별 상세 분석
+- **반응형 디자인**: 모든 장치에서 최적화된 UI
 
 ## 기술 스택
 
-- **Backend**: FastAPI (Python 3.12) + SQLAlchemy + Celery + Redis
-- **Frontend**: Next.js 15 (TypeScript) + TanStack Query + Zustand
-- **Database**: PostgreSQL 16
-- **Cache/Queue**: Redis 7
-- **Infrastructure**: Docker Compose (개발), AWS ECS Fargate (운영)
+- **백엔드**: FastAPI, SQLAlchemy, Celery, Redis
+- **프론트엔드**: Next.js 15, React 18, TailwindCSS, React Query
+- **데이터베이스**: PostgreSQL 16
+- **캐싱**: Redis 7
+- **메시지 브로커**: Redis
+- **데이터 소스**: yfinance (Yahoo Finance)
 
-## 빠른 시작 (로컬 개발)
+## 빠른 시작
 
-### 요구사항
+### 사전 요구사항
+
 - Docker & Docker Compose
-- Git
+- Python 3.12+ (로컬 개발)
+- Node.js 20+ (로컬 개발)
 
-### 1단계: 프로젝트 클론 및 설정
+### 환경 설정
 
 ```bash
-git clone https://github.com/yschoi/stock-screener.git
+# 저장소 클론
+git clone <repository-url>
 cd stock-screener
+
+# 환경 파일 생성
+cp .env.example .env
+
+# .env에서 SECRET_KEY 변경
+nano .env
+```
+
+### Docker로 실행 (권장)
+
+```bash
+# 모든 서비스 시작
+docker compose up -d
+
+# 데이터베이스 마이그레이션
+docker compose exec backend alembic upgrade head
+
+# 접속
+# 프론트엔드: http://localhost:3000
+# API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+### 로컬 개발 (Docker 없이)
+
+```bash
+# 백엔드 설정
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"
+
+export DATABASE_URL=postgresql://user:pass@localhost/stockscreener
+export REDIS_URL=redis://localhost:6379/0
+
+# 마이그레이션
+alembic upgrade head
+
+# 서버 실행
+uvicorn app.main:app --reload
+
+# 프론트엔드 설정 (별도 터미널)
+cd frontend/apps/web
+pnpm install
+pnpm dev
+```
+
+## API 엔드포인트
+
+### 인증
+- `POST /v1/auth/register` - 회원가입
+- `POST /v1/auth/login` - 로그인
+- `GET /v1/auth/me` - 현재 사용자 정보
+
+### 스크리닝
+- `GET /v1/screener/results` - 스크리닝 결과 조회
+- `GET /v1/screener/results/{ticker}` - 종목 상세 정보
+
+### 주식
+- `GET /v1/stocks/{ticker}` - 주식 정보 조회
+- `GET /v1/stocks` - 종목 검색
+
+## 평가 기준 (12개)
+
+### 저평가 지표 (4개)
+- PER Ratio (주가수익비율)
+- PB Ratio (주가순자산비율)
+- PS Ratio (주가판매비)
+- PEG Ratio (주가순이익성장비율)
+
+### 수익성 지표 (5개)
+- ROE (자기자본이익률)
+- ROA (총자산이익률)
+- Net Margin (순이익률)
+- Gross Margin (매출총이익률)
+- Operating Margin (영업이익률)
+
+### 성장성 지표 (2개)
+- Revenue Growth (매출 성장)
+- EPS Growth (주당이익 성장)
+
+### 재무 건강도 (4개)
+- Debt-to-Equity (부채비율)
+- Current Ratio (유동비율)
+- Quick Ratio (당좌비율)
+- Interest Coverage (이자보상배수)
+
+## 자동 스케줄
+
+Celery Beat를 통한 정기적인 데이터 수집 및 스크리닝:
+
+- **KR 시장 데이터 수집**: 매일 06:40 UTC
+- **US 시장 데이터 수집**: 매일 21:30 UTC
+- **KR 시장 스크리닝**: 매일 07:00 UTC
+- **US 시장 스크리닝**: 매일 22:00 UTC
+
+## 프로젝트 구조
+
+```
+stock-screener/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/              # API 라우터
+│   │   ├── core/                # 스크리닝 엔진
+│   │   ├── data/                # 데이터 프로바이더
+│   │   ├── models/              # DB 모델
+│   │   ├── tasks/               # Celery 태스크
+│   │   └── ...
+│   └── tests/                   # 테스트
+├── frontend/
+│   └── apps/web/                # Next.js 앱
+│       ├── app/                 # 페이지
+│       ├── components/          # React 컴포넌트
+│       ├── lib/                 # 유틸리티
+│       └── ...
+├── docker-compose.yml           # 서비스 구성
+└── README.md                    # 이 파일
+```
+
+## 개발 가이드
+
+### 새로운 스크리닝 기준 추가
+
+`/backend/app/core/screening/criteria/` 디렉터리에 새 파일을 생성하고 `BaseCriteria`를 상속받아 구현하면 자동으로 등록됩니다 (플러그인 아키텍처).
+
+### 테스트 실행
+
+```bash
+cd backend
+pytest                           # 모든 테스트
+pytest tests/test_screening/     # 특정 디렉터리
+pytest --cov=app                # 커버리지 포함
+```
+
+### 마이그레이션
+
+```bash
+cd backend
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+alembic downgrade -1
+```
+
+## 트러블슈팅
+
+### 포트 충돌
+```bash
+# 포트 사용 확인
+lsof -i :8000
+lsof -i :3000
+lsof -i :5432
+lsof -i :6379
+```
+
+### 데이터베이스 초기화
+```bash
+docker compose down -v
+docker compose up -d
+docker compose exec backend alembic upgrade head
+```
+
+### Celery 태스크 문제
+```bash
+docker compose logs worker
+docker compose logs beat
+docker compose exec backend celery -A app.tasks.celery_app call app.tasks.data_fetch.fetch_us_market
+```
+
+## 배포
+
+### Docker를 이용한 배포
+
+```bash
+# 이미지 빌드
+docker compose build
 
 # 환경 설정
 cp .env.example .env
-# .env 파일 수정 (필요시)
+# .env 파일 수정 (SECRET_KEY, DEBUG=False, ENVIRONMENT=production)
+
+# 배포
+docker compose -f docker-compose.yml up -d
 ```
 
-### 2단계: Docker Compose로 실행
+### 환경 변수 체크리스트
+
+- [ ] `SECRET_KEY` 변경 (32자 이상의 랜덤 문자열)
+- [ ] `DEBUG=False` 설정
+- [ ] `ENVIRONMENT=production` 설정
+- [ ] `DATABASE_URL` 프로덕션 데이터베이스 URL
+- [ ] `REDIS_URL` 프로덕션 Redis URL
+- [ ] HTTPS 및 CORS 설정 확인
+
+## 라이센스
+
+MIT
+
+## 기여
+
+pull request와 이슈 제출을 환영합니다!
+
+## 문의
+
+개발 관련 질문이나 버그 리포트는 이슈 또는 discussions을 사용해주세요.
+
+---
+
+**상태**: Phase 10 완료 (모든 기능 구현)
+**마지막 업데이트**: 2026-05-17
 
 ```bash
 docker-compose up --build

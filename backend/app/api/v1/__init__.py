@@ -4,9 +4,11 @@ from fastapi import APIRouter
 
 from .stocks import router as stocks_router
 from .screening import router as screening_router
+from .auth import router as auth_router
 
 api_router = APIRouter(prefix="/v1", tags=["v1"])
 
+api_router.include_router(auth_router)
 api_router.include_router(stocks_router)
 api_router.include_router(screening_router)
 
