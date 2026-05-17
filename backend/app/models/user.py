@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, String, UniqueConstraint, VARCHAR, JSON
+from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint, VARCHAR, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime
 
@@ -46,10 +46,10 @@ class Watchlist(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="users.id", ondelete="CASCADE"
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     stock_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="stocks.id", ondelete="CASCADE"
+        ForeignKey("stocks.id", ondelete="CASCADE"), nullable=False
     )
     alert_threshold: Mapped[Optional[float]] = mapped_column()  # Alert if score >= threshold
     created_at: Mapped[datetime] = mapped_column(
@@ -74,7 +74,7 @@ class UserScreeningPreset(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="users.id", ondelete="CASCADE"
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     preset_name: Mapped[str] = mapped_column(VARCHAR(100), nullable=False)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

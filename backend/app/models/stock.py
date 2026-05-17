@@ -44,9 +44,6 @@ class Stock(Base, TimestampMixin):
     watchlist_items = relationship(
         "Watchlist", back_populates="stock", cascade="all, delete-orphan"
     )
-    sector_benchmarks = relationship(
-        "SectorBenchmark", back_populates="stocks", foreign_keys="SectorBenchmark.sector"
-    )
 
     def __repr__(self) -> str:
         return f"<Stock {self.ticker} ({self.market})>"

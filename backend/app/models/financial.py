@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Any, Optional
 
-from sqlalchemy import DATE, JSON, Index, String, UniqueConstraint, VARCHAR, DateTime
+from sqlalchemy import DATE, JSON, ForeignKey, Index, String, UniqueConstraint, VARCHAR, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import NUMERIC
 
@@ -20,7 +20,7 @@ class RawFinancial(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     stock_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="stocks.id", ondelete="CASCADE"
+        ForeignKey("stocks.id", ondelete="CASCADE"), nullable=False
     )
     source: Mapped[str] = mapped_column(VARCHAR(50), nullable=False)  # polygon, kis_api, dart, etc
     fiscal_period: Mapped[Optional[str]] = mapped_column(VARCHAR(10))  # 2024Q3, 2024A
@@ -49,7 +49,7 @@ class FinancialMetric(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     stock_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="stocks.id", ondelete="CASCADE"
+        ForeignKey("stocks.id", ondelete="CASCADE"), nullable=False
     )
 
     # Price Data
@@ -117,13 +117,6 @@ class SectorBenchmark(Base):
     median_roe: Mapped[Optional[float]] = mapped_column(NUMERIC(8, 4))
     median_debt_eq: Mapped[Optional[float]] = mapped_column(NUMERIC(10, 4))
     stock_count: Mapped[int] = mapped_column(nullable=False, default=0)
-
-    # Relationships
-    stocks = relationship(
-        "Stock",
-        back_populates="sector_benchmarks",
-        foreign_keys="Stock.sector",
-    )
 
     def __repr__(self) -> str:
         return f"<SectorBenchmark {self.market}/{self.sector} {self.metric_date}>"

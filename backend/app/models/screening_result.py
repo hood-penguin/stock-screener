@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import DATE, Index, String, Text, VARCHAR
+from sqlalchemy import DATE, ForeignKey, Index, String, Text, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import NUMERIC, DateTime, Boolean
 
@@ -22,7 +22,7 @@ class ScreeningResult(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     stock_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="stocks.id", ondelete="CASCADE"
+        ForeignKey("stocks.id", ondelete="CASCADE"), nullable=False
     )
     market: Mapped[str] = mapped_column(VARCHAR(4), nullable=False)
     total_score: Mapped[float] = mapped_column(
@@ -54,7 +54,7 @@ class CriteriaScore(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     screening_result_id: Mapped[int] = mapped_column(
-        nullable=False, foreign_key="screening_results.id", ondelete="CASCADE"
+        ForeignKey("screening_results.id", ondelete="CASCADE"), nullable=False
     )
     criteria_id: Mapped[str] = mapped_column(VARCHAR(100), nullable=False)
     score: Mapped[float] = mapped_column(
