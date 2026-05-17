@@ -1,0 +1,102 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+.env.example.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+dist/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+pgdata/
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# IDE settings
+.editorconfig
+
+# Misc
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
