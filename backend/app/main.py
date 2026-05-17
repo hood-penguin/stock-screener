@@ -45,9 +45,9 @@ def create_app() -> FastAPI:
         """Health check endpoint."""
         return {"status": "ok", "environment": settings.environment}
 
-    # TODO: Include API routers
-    # from app.api.v1 import api_router
-    # app.include_router(api_router, prefix="/v1")
+    # Include API routers
+    from app.api import api_router
+    app.include_router(api_router)
 
     return app
 

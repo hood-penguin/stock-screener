@@ -46,6 +46,10 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    # Initialize screening criteria registry
+    from .core.screening import CriteriaRegistry
+    CriteriaRegistry.discover()
+
 
 async def close_db() -> None:
     """Close database connection."""
