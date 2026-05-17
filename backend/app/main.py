@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
     """Manage application lifecycle (startup/shutdown)."""
     # Startup
     await init_db()
+    from app.core.screening.registry import CriteriaRegistry
+    CriteriaRegistry.discover()
     yield
     # Shutdown
     await close_db()
