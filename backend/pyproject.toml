@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stock-screener-backend"
+version = "0.1.0"
+description = "Stock Screener Service - Backend API and Screening Engine"
+requires-python = ">=3.12"
+authors = [
+    {name = "yschoi", email = "yschoi@ssrinc.co.kr"}
+]
+
+dependencies = [
+    # Web Framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.6",
+
+    # Database & ORM
+    "sqlalchemy>=2.0",
+    "alembic>=1.13.0",
+    "psycopg2-binary>=2.9",
+    "asyncpg>=0.29.0",
+
+    # Validation & Settings
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+
+    # Cache & Queue
+    "redis>=5.0",
+    "celery>=5.3",
+
+    # Authentication & Security
+    "python-jose[cryptography]>=3.3",
+    "passlib[bcrypt]>=1.7",
+    "python-dotenv>=1.0",
+
+    # Data Collection
+    "yfinance>=0.2",
+    "httpx>=0.25",
+    "pandas>=2.0",
+    "numpy>=1.24",
+
+    # Logging & Monitoring
+    "python-json-logger>=2.0",
+
+    # Testing
+    "pytest>=7.4",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.1",
+    "httpx>=0.25",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.1",
+    "isort>=5.13",
+    "flake8>=7.0",
+    "mypy>=1.8",
+    "pytest-watch>=4.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
