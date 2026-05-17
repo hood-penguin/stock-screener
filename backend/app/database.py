@@ -11,13 +11,17 @@ settings = get_settings()
 async_database_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
 
 # Create async engine
+_pool_kwargs = (
+    {}
+    if settings.is_development
+    else {"pool_size": settings.database_pool_size, "max_overflow": settings.database_max_overflow}
+)
 engine = create_async_engine(
     async_database_url,
     echo=settings.database_echo,
-    pool_size=settings.database_pool_size,
-    max_overflow=settings.database_max_overflow,
-    pool_pre_ping=True,  # Test connections before using them
-    poolclass=NullPool if settings.is_development else None,  # No pooling in dev
+    pool_pre_ping=True,
+    poolclass=NullPool if settings.is_development else None,
+    **_pool_kwargs,
 )
 
 # Create async session factory
@@ -37,6 +41,9 @@ async def get_db_session() -> AsyncSession:
             yield session
         finally:
             await session.close()
+
+
+get_db = get_db_session
 
 
 async def init_db() -> None:
