@@ -25,7 +25,9 @@ dependencies = [
 
     # Validation & Settings
     "pydantic>=2.0",
+    "pydantic[email]>=2.0",
     "pydantic-settings>=2.0",
+    "email-validator>=2.0",
 
     # Cache & Queue
     "redis>=5.0",
